@@ -42,6 +42,32 @@ typedef int16 Elf64_Half;
 #define	SHN_COMMON 0xFFF2
 
 
+//e_ident
+
+// sh_type
+#define SHT_NULL 		0
+#define SHT_PROGBITS 	1
+#define SHT_SYMTAB 		2
+#define SHT_STRTAB 		3
+#define SHT_RELA 		4
+#define SHT_HASH 		5
+#define SHT_DYNAMIC 	6
+#define SHT_NOTE		7
+#define SHT_NOBITS		8
+#define SHT_REL 		9
+#define SHT_SHLIB 		10
+#define SHT_DYNSYM 		11
+#define SHT_LOPROC 		0x70000000
+#define SHT_HIPROC 		0x7fffffff
+#define SHT_LOUSER		0x80000000
+#define SHT_HIUSER 		0x8fffffff
+
+//st_info
+#define STB_LOCAL	0
+#define STB_GLOBAL 	1
+#define STB_WEAK 	2
+
+
 typedef struct
 {
 	unsigned char e_ident[16]; /* ELF identification */
@@ -98,7 +124,7 @@ typedef struct
 } Elf64_Phdr;
 
 
-void read_elf();
+void read_elf(char* file_name);
 void read_Elf_header();
 void read_elf_sections();
 void read_symtable();

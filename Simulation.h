@@ -1,8 +1,8 @@
 #include<iostream>
 #include<stdio.h>
 #include<math.h>
-#include <io.h>
-#include <process.h>
+//#include <io.h>
+//#include <process.h>
 #include<time.h>
 #include<stdlib.h>
 #include"Reg_def.h"
@@ -96,7 +96,6 @@
 #define MAX 100000000
 #define INST_LEN 32
 
-
 //主存
 unsigned char memory[MAX]={0};
 //寄存器堆
@@ -134,7 +133,7 @@ void WB();
 
 
 //符号扩展
-int ext_signed(unsigned int src,int bit);
+int ext_signed(unsigned int src, char EXTop, int len);
 
 //获取指定位
 unsigned int getbit(unsigned inst, int s,int e);//???
@@ -149,40 +148,19 @@ unsigned int getbit(unsigned inst, int s,int e)
 }
 
 //??????
-int ext_signed(unsigned int src,int bit)
+int ext_signed(unsigned int src, int EXTop, int len)
 {
-
-    return 0;
+	if(EXTop==0){
+		return (int)src;
+	}
+	else{
+		int sign = src>>(len-1);
+		int mask = 0xffffffff<<len;
+		if(sign){
+			return mask|((int)src);
+		}
+		else
+			return (int)src;
+	}
 }
 
-unsigned short read_mem_2(unsigned long long address){
-	return memory[address] | (memory[address+1]<<8);
-}
-unsigned int read_mem_4(unsigned long long address){
-	return memory[address] | (memory[address+1]<<8) | (memory[address+2]<<16) | (memory[address+3]<<24);
-}
-unsigned long long read_mem_8(unsigned long long address){
-	return memory[address] | (memory[address+1]<<8) | (memory[address+2]<<16) | (memory[address+3]<<24)
-	| (memory[address+4]<<32) | (memory[address+5]<<40) | (memory[address+6]<<48) | (memory[address+7]<<56);
-}
-
-void write_mem_2(unsigned long long address, unsigned short val){
-	memory[address] = (unsigned char)val;
-	memory[address+1] = (unsigned char)(val>>8);
-}
-void write_mem_4(unsigned long long address, unsigned int val){
-	memory[address] = (unsigned char)val;
-	memory[address+1] = (unsigned char)(val>>8);
-	memory[address+2] = (unsigned char)(val>>16);
-	memory[address+3] = (unsigned char)(val>>24);
-}
-void write_mem_8(unsigned long long address, unsigned long long val){
-	memory[address] = (unsigned char)val;
-	memory[address+1] = (unsigned char)(val>>8);
-	memory[address+2] = (unsigned char)(val>>16);
-	memory[address+3] = (unsigned char)(val>>24);
-	memory[address+4] = (unsigned char)(val>>32);
-	memory[address+5] = (unsigned char)(val>>40);
-	memory[address+6] = (unsigned char)(val>>48);
-	memory[address+7] = (unsigned char)(val>>56);
-}

@@ -1,8 +1,7 @@
 #include "Simulation.h"
-#include "Reg_def.h"
 using namespace std;
 
-extern void read_elf();
+extern void read_elf(char* filename);
 extern unsigned int cadr;
 extern unsigned int csize;
 extern unsigned int vadr;
@@ -12,6 +11,17 @@ extern unsigned int endPC;
 extern unsigned int entry;
 extern FILE *file;
 
+unsigned short read_mem_2(unsigned long long address);
+unsigned int read_mem_4(unsigned long long address);
+unsigned long long read_mem_8(unsigned long long address);
+void write_mem_2(unsigned long long address, unsigned short val);
+void write_mem_4(unsigned long long address, unsigned int val);
+void write_mem_8(unsigned long long address, unsigned long long val);
+void disp_reg();
+void disp_memory(int addr, int size, int blocks)
+
+#define DEBUG
+//#define STEP
 
 //指令运行数
 long long inst_num=0;
@@ -33,8 +43,9 @@ void load_memory()
 
 int main()
 {
+    char* filename = "qsort";
 	//解析elf文件
-	read_elf();
+	read_elf(filename);
 	
 	//加载内存
 	load_memory();
@@ -57,7 +68,9 @@ int main()
 void simulate()
 {
 	//结束PC的设置
-	int end=(int)endPC/4-1;
+	//int end=(int)endPC/4-1;
+    int end = endPC;
+    PC = madr;
 	while(PC!=end)
 	{
 		//运行
@@ -89,6 +102,9 @@ void IF()
 	IF_ID_old.inst=read_mem_4(PC);
 	PC=PC+4;
 	IF_ID_old.PC=PC;
+#ifdef DEBUG
+    printf("Fetching instruction at %x\n", PC);
+#endif
 }
 
 //译码
@@ -102,20 +118,31 @@ void ID()
 	char RegDst,ALUSrc;
 	branch_cond Branch;
 	char MemRead,MemWrite;
-	char RegWrite,MemtoReg;
+	char RegWrite,MemtoReg,PCtoReg;
+    int immlen = 0;
 	ALUOPs ALUop;
+    newPC_Source newPCSrc = NObranch;
 
 	OP=getbit(inst,0,6);
 	rd=getbit(inst,7,11);
 	fuc3=getbit(inst,12,14);
 	rs=getbit(inst,15,19);
 	rt=getbit(inst,20,24);
-	fun7=getbit(inst,25,31);
+	fuc7=getbit(inst,25,31);
 	//....
+    EXTsrc = 0;
+    RegDst=0;
+    MemRead=0;
+    MemWrite=0;
+    ALUSrc=0;
+    RegWrite=0;
+    MemtoReg=0;
+    EXTop=0;
+    PCtoReg=0;
+    ALUop=NONE;
+    Branch=NEVER;
 
-
-	if(OP==OP_R)
-	{
+	if(OP==OP_R) {
 		RegDst=0;
 		Branch=NEVER;
 		MemRead=0;
@@ -124,54 +151,98 @@ void ID()
 		RegWrite=1;
 		MemtoReg=0;
 		EXTop=0;
+        PCtoReg=0;
 		if(fuc3==F3_ADD && fuc7==F7_ADD)//add
 		{
 			ALUop=ADD;
+#ifdef DEBUG
+            printf("Decoding: add, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_MUL && fuc7==F7_MUL){//mul
 			ALUop=MUL;
+#ifdef DEBUG
+            printf("Decoding: mul, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_SUB && fuc7==F7_SUB){//sub
 			ALUop=SUB;
+#ifdef DEBUG
+            printf("Decoding: sub, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_SLL && fuc7==F7_SLL){//sll
 			ALUop=SLL;
+#ifdef DEBUG
+            printf("Decoding: sll, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_MULH && fuc7==F7_MULH){//mulh
 			ALUop=MUL;
+#ifdef DEBUG
+            printf("Decoding: mulh, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_SLT && fuc7==F7_SLT){//slt
 			ALUop=SUB;
+#ifdef DEBUG
+            printf("Decoding: slt, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_XOR && fuc7==F7_XOR){//xor
 			ALUop=XOR;
+#ifdef DEBUG
+            printf("Decoding: xor, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_DIV && fuc7==F7_DIV){//div
 			ALUop=DIV;
+#ifdef DEBUG
+            printf("Decoding: div, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_SRL && fuc7==F7_SRL){//srl
 			ALUop=SRL;
+#ifdef DEBUG
+            printf("Decoding: srl, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_SRA && fuc7==F7_SRA){//sra
 			ALUop=SRA;
+#ifdef DEBUG
+            printf("Decoding: sra, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_OR && fuc7==F7_OR){//or
 			ALUop=OR;
+#ifdef DEBUG
+            printf("Decoding: or, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_REM && fuc7==F7_REM){//rem
 			ALUop=DIV;
+#ifdef DEBUG
+            printf("Decoding: rem, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else if(fuc3==F3_AND && fuc7==F7_AND){//and
 			ALUop=AND;
+#ifdef DEBUG
+            printf("Decoding: and, %d, %d, %d\n", rd,rs,rt);
+#endif
 		}
 		else
 		{
 			ALUop=NONE;
+#ifdef DEBUG
+            printf("Invalid Instruction!");
+#endif
 		}
 	}
 	else if(OP==OP_I)
 	{
-		EXTsrc = getbit(inst, 20, 31);
+		EXTsrc = imm12 = getbit(inst, 20, 31);
+        immlen = 12;
 		RegDst=0;
 		Branch=NEVER;
 		MemRead=0;
@@ -180,39 +251,68 @@ void ID()
 		RegWrite=1;
 		MemtoReg=0;
 		EXTop=0;
+        PCtoReg=0;
 		if(fuc3==F3_ADDI){//addi
 			ALUop=ADD;
+#ifdef DEBUG
+            printf("Decoding: addi, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_SLLI && fuc7==F7_SLLI){//slli
 			ALUop=SLL;
+#ifdef DEBUG
+            printf("Decoding: slli, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_SLTI){//slti
 			ALUop=SUB;
+#ifdef DEBUG
+            printf("Decoding: slti, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_XORI){//xori
 			ALUop=XOR;
+#ifdef DEBUG
+            printf("Decoding: xori, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_SRLI && fuc7==F7_SRLI){//srli
 			ALUop=SRL;
+#ifdef DEBUG
+            printf("Decoding: srli, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_SRAI && fuc7==F7_SRAI){//srai
 			ALUop=SRA;
+#ifdef DEBUG
+            printf("Decoding: srai, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_ORI){//ori
 			ALUop=OR;
+#ifdef DEBUG
+            printf("Decoding: ori, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else if(fuc3==F3_ANDI){//andi
-			ALUop=AND
+			ALUop=AND;
+#ifdef DEBUG
+            printf("Decoding: andi, %d, %d, %d\n", rd,rs,imm12);
+#endif
 		}
 		else{
 			ALUop=NONE;
+#ifdef DEBUG
+            printf("Invalid Instruction!");
+#endif
 		}
 	}
 	else if(OP==OP_SW)
 	{
 		unsigned imm4_0 = getbit(inst,7,11);
 		unsigned imm11_5 = getbit(inst,25,31);
-		EXTsrc = (imm11_5<<5)|imm4_0;
+		EXTsrc = imm12 = (imm11_5<<5)|imm4_0;
+        immlen = 12;
 		RegDst=0;//unclear
 		Branch=NEVER;
 		MemRead=0;
@@ -220,26 +320,43 @@ void ID()
 		RegWrite=0;
 		MemtoReg=0;
 		EXTop=0;
+        PCtoReg=0;
 		ALUop=ADD;//add
 		if(fuc3==F3_SB){
 			MemWrite=1;
+#ifdef DEBUG
+            printf("Decoding: sb, %d, %d(Reg %d)\n", rt, imm12, rs);
+#endif
 		}
 		else if(fuc3==F3_SH){
 			MemWrite=2;
+#ifdef DEBUG
+            printf("Decoding: sh, %d, %d(Reg %d)\n", rt, imm12, rs);
+#endif
 		}
 		else if(fuc3==F3_SW){
 			MemWrite=4;
+#ifdef DEBUG
+            printf("Decoding: sw, %d, %d(Reg %d)\n", rt, imm12, rs);
+#endif
 		}
 		else if(fuc3==F3_SD){
 			MemWrite=8;
+#ifdef DEBUG
+            printf("Decoding: sd, %d, %d(Reg %d)\n", rt, imm12, rs);
+#endif
 		}
 		else{
 			MemWrite=0;
+#ifdef DEBUG
+            printf("Invalid Instruction!");
+#endif
 		}
 	}
 	else if(OP==OP_LW)
 	{
 		EXTsrc = getbit(inst, 20, 31);
+        immlen = 12;
 		RegDst=0;
 		Branch=NEVER;
 		MemWrite=0;
@@ -247,23 +364,40 @@ void ID()
 		RegWrite=1;
 		MemtoReg=1;
 		EXTop=0;
+        PCtoReg=0;
 		ALUop=ADD;//add
 		if(fuc3==F3_LB){
 			EXTop=1;
 			MemRead=1;
+#ifdef DEBUG
+            printf("Decoding: lb, %d, %d(Reg %d)\n", rd, imm12, rs);
+#endif
 		}
 		else if(fuc3==F3_LH){
 			EXTop=1;
 			MemRead=2;
+#ifdef DEBUG
+            printf("Decoding: lh, %d, %d(Reg %d)\n", rd, imm12, rs);
+#endif
 		}
 		else if(fuc3==F3_LW){
+            EXTop=1;
 			MemRead=4;
+#ifdef DEBUG
+            printf("Decoding: lw, %d, %d(Reg %d)\n", rd, imm12, rs);
+#endif
 		}
 		else if(fuc3==F3_LD){
 			MemRead=8;
+#ifdef DEBUG
+            printf("Decoding: ld, %d, %d(Reg %d)\n", rd, imm12, rs);
+#endif
 		}
 		else{
 			MemRead=0;
+#ifdef DEBUG
+            printf("Invalid Instruction!");
+#endif
 		}
 	}
 	else if(OP==OP_BEQ)
@@ -272,7 +406,9 @@ void ID()
 		unsigned imm10_10 = getbit(inst,7,7);
 		unsigned imm9_4 = getbit(inst,25,30);
 		unsigned imm3_0 = getbit(inst,8,11);
-		EXTsrc = (imm11_11<<11) | (imm10_10<<10) | (imm9_4<<4) | imm3_0;
+		imm12 = (imm11_11<<11) | (imm10_10<<10) | (imm9_4<<4) | imm3_0;
+        EXTsrc = imm12<<1;
+        immlen = 13;
 		RegDst=0;
 		MemRead=0;
 		MemWrite=0;
@@ -280,37 +416,106 @@ void ID()
 		RegWrite=0;
 		MemtoReg=0;
 		EXTop=0;
-		ALUop=2;//sub
+        PCtoReg=0;
+		ALUop=SUB;//sub
+        newPCSrc = ALUOUT;
 		if(fuc3==F3_BEQ){
 			Branch=EQ;
+#ifdef DEBUG
+            printf("Decoding: beq, %d, %d, %#x\n", rs, rt, imm12);
+#endif
 		}
 		else if(fuc3==F3_BNE){
 			Branch=NE;
+#ifdef DEBUG
+            printf("Decoding: bne, %d, %d, %#x\n", rs, rt, imm12);
+#endif
 		}
 		else if(fuc3==F3_BLT){
 			Branch=LT;
+#ifdef DEBUG
+            printf("Decoding: blt, %d, %d, %#x\n", rs, rt, imm12);
+#endif
 		}
 		else if(fuc3==F3_BGE){
 			Branch=GE;
+#ifdef DEBUG
+            printf("Decoding: bge, %d, %d, %#x\n", rs, rt, imm12);
+#endif
 		}	
 		else{
+#ifdef DEBUG
+            printf("Invalid Instruction!");
+#endif
 			Branch=NEVER;
-		   
 		}
 	}
 	else if(OP==OP_JAL)
 	{
-		
+		unsigned imm19_19 = getbit(inst, 31, 31);
+        unsigned imm9_0 = getbit(inst, 30, 21);
+        unsigned imm10_10 = getbit(inst, 20, 20);
+        unsigned imm18_11 = getbit(inst, 19, 12);
+        imm20 = (imm19_19<<19) | (imm18_11<<11) | (imm10_10<<10) |(imm9_0);
+        EXTsrc = imm20<<1;
+        immlen = 21;
+        RegDst=1;
+        MemRead=0;
+        MemWrite=0;
+        ALUSrc=0; //from reg
+        RegWrite=1;
+        MemtoReg=0;
+        EXTop=0;
+        PCtoReg=1;
+        ALUop=ADD;//???
+        Branch=ALWAYS;
+        newPCSrc = ALUOUT;
+#ifdef DEBUG
+        printf("Decoding: jal, %d, %#x\n", rd, rt, imm20);
+#endif
 	}
-	else
+	else if(OP==OP_JALR && fuc3==F3_JALR)
 	{
-		
+        imm12 = getbit(inst, 20, 31);
+        EXTsrc = imm12;
+        immlen = 12;
+        RegDst=1;
+        MemRead=0;
+        MemWrite=0;
+        ALUSrc=0; //from reg
+        RegWrite=1;
+        MemtoReg=0;
+        EXTop=0;
+        PCtoReg=1;
+        ALUop=ADD;//???
+        Branch=ALWAYS;
+        newPCSrc = ALUOUT_0;
+#ifdef DEBUG
+        printf("Decoding: jalr, %d, %d, %#x\n", rd, rs, imm12);
+#endif
 	}
+    else if(OP==OP_IW && fuc3==F3_ADDIW){
+
+    }
+    else if(OP==OP_AUIPC){
+
+    }
+    else if(OP==OP_LUI){
+
+    }
+    else if(OP==OP_SCALL && fuc3==F3_SCALL && fuc7==F7_SCALL){
+
+    }
+    else{
+#ifdef DEBUG
+        printf("Invalid Instruction!");
+#endif
+    }
 
 	//write ID_EX_old
 	ID_EX_old.Rd=rd;
 	ID_EX_old.Rt=rt;
-	ID_EX_old.Imm=ext_signed(EXTsrc,EXTop);
+	ID_EX_old.Imm=ext_signed(EXTsrc,EXTop,immlen);
 	ID_EX_old.Reg_Rs=reg[rs];
 	ID_EX_old.Reg_Rt=reg[rt];
 	//...
@@ -321,8 +526,10 @@ void ID()
 	ID_EX_old.Ctrl_M_Branch=Branch;
 	ID_EX_old.Ctrl_M_MemWrite=MemWrite;
 	ID_EX_old.Ctrl_M_MemRead=MemRead;
-	ID_EX_old.Ctrl_WB_MemtoReg;
+    ID_EX_old.Ctrl_M_newPCSrc=newPCSrc;
+	ID_EX_old.Ctrl_WB_MemtoReg=MemtoReg;
 	ID_EX_old.Ctrl_WB_RegWrite=RegWrite;
+    ID_EX_old.Ctrl_WB_PCtoReg=PCtoReg;
 	//....
 
 }
@@ -407,8 +614,10 @@ void EX()
 	EX_MEM_old.Ctrl_M_Branch=ID_EX.Ctrl_M_Branch;
 	EX_MEM_old.Ctrl_M_MemRead=ID_EX.Ctrl_M_MemRead;
 	EX_MEM_old.Ctrl_M_MemWrite=ID_EX.Ctrl_M_MemWrite;
+    EX_MEM_old.Ctrl_M_newPCSrc=ID_EX.Ctrl_M_newPCSrc;
 	EX_MEM_old.Ctrl_WB_RegWrite=ID_EX.Ctrl_WB_RegWrite;
 	EX_MEM_old.Ctrl_WB_MemtoReg=ID_EX.Ctrl_WB_MemtoReg;
+    EX_MEM_old.Ctrl_WB_PCtoReg=ID_EX.Ctrl_WB_PCtoReg;
 	//.....
 }
 
@@ -423,11 +632,19 @@ void MEM()
 	int Sign = EX_MEM.Sign;
 	char MemWrite = EX_MEM.Ctrl_M_MemWrite;
 	char MemRead = EX_MEM.Ctrl_M_MemRead;
+    char newPCSrc = EX_MEM.Ctrl_M_newPCSrc;
 	int temp_PC = EX_MEM.PC;
-	int newPC;
+	int newPC = 0;
 	unsigned long long Mem_read = 0;
 	//complete Branch instruction PC change
-	newPC = temp_PC + imm12<<1;
+    if(newPCSrc==ALUOUT){
+        newPC = temp_PC + imm12<<1;
+        //newPC = ALUout;
+    }
+    else if(newPCSrc==ALUOUT_0){
+        newPC = (temp_PC + imm12)<<1;
+        //newPC = ALUout<<1;
+    }
 	switch(Branch){
 		case EQ:
 			if(Zero) PC = newPC;
@@ -441,6 +658,11 @@ void MEM()
 		case GE:
 			if(!Sign) PC = newPC;
 			break;
+        case ALWAYS:
+            PC = newPC;
+            break;
+        case NEVER:
+            break;
 		default:;
 	}
 
@@ -477,6 +699,7 @@ void MEM()
     MEM_WB_old.Reg_dst = EX_MEM.Reg_dst;
     MEM_WB_old.Ctrl_WB_MemtoReg = EX_MEM.Ctrl_WB_MemtoReg;
     MEM_WB_old.Ctrl_WB_RegWrite = EX_MEM.Ctrl_WB_RegWrite;
+    MEM_WB_old.Ctrl_WB_PCtoReg = EX_MEM.Ctrl_WB_PCtoReg;
 }
 
 
@@ -487,6 +710,7 @@ void WB()
     int Reg_Dst = MEM_WB.Reg_dst;
     char RegWrite = MEM_WB.Ctrl_WB_RegWrite;
     char MemtoReg = MEM_WB.Ctrl_WB_MemtoReg;
+    char PCtoReg = MEM_WB.Ctrl_WB_PCtoReg;
     REG ALUout = MEM_WB.ALU_out;
     unsigned long long Mem_read = MEM_WB.Mem_read;
 
@@ -495,8 +719,96 @@ void WB()
         if(MemtoReg){
             reg[Reg_Dst] = Mem_read;
         }
+        else if(PCtoReg){
+            reg[Reg_Dst] = PC; //PC+4
+        }
         else{
             reg[Reg_Dst] = ALUout;
         }
     }
+}
+
+void disp_reg(){
+    printf("Registers:\n");
+    for(int i=0;i<8;++i){
+        for(int j=0;j<4;++j){
+            int index = i*8+j;
+            printf("%d: %#llx\t", index, reg[index]);
+        }
+        printf("\n");
+    }
+}
+
+void disp_memory(int addr, int size, int blocks){
+    if(size == 1){
+        for(int i=0;i<blocks;++i){
+            printf("%#.8x: %#.2x", addr, memory[addr]);
+            if((i+1)%16==0){
+                printf("\n");
+            }
+            addr += 1;
+        }
+    }
+    else if(size == 2){
+        for(int i=0;i<blocks;++i){
+            printf("%#.8x: %#.4x", addr, read_mem_2(addr));
+            if((i+1)%8==0){
+                printf("\n");
+            }
+            addr += 2;
+        }
+    }
+    else if(size == 4){
+        for(int i=0;i<blocks;++i){
+            printf("%#.8x: %#.8x", addr, read_mem_4(addr));
+            if((i+1)%4==0){
+                printf("\n");
+            }
+            addr += 4;
+        }
+    }
+    else if(size == 8){
+        for(int i=0;i<blocks;++i){
+            printf("%#.8x: %#.16x", addr, read_mem_4(addr));
+            if((i+1)%2==0){
+                printf("\n");
+            }
+            addr += 8;
+        }
+    }
+    else{
+        printf("Size Error! Only 1,2,4,8 are supported!\n");
+    }
+}
+
+unsigned short read_mem_2(unsigned long long address){
+    return memory[address] | (memory[address+1]<<8);
+}
+unsigned int read_mem_4(unsigned long long address){
+    return memory[address] | (memory[address+1]<<8) | (memory[address+2]<<16) | (memory[address+3]<<24);
+}
+unsigned long long read_mem_8(unsigned long long address){
+    return memory[address] | (memory[address+1]<<8) | (memory[address+2]<<16) | (memory[address+3]<<24)
+           | (memory[address+4]<<32) | (memory[address+5]<<40) | (memory[address+6]<<48) | (memory[address+7]<<56);
+}
+
+void write_mem_2(unsigned long long address, unsigned short val){
+    memory[address] = (unsigned char)val;
+    memory[address+1] = (unsigned char)(val>>8);
+}
+void write_mem_4(unsigned long long address, unsigned int val){
+    memory[address] = (unsigned char)val;
+    memory[address+1] = (unsigned char)(val>>8);
+    memory[address+2] = (unsigned char)(val>>16);
+    memory[address+3] = (unsigned char)(val>>24);
+}
+void write_mem_8(unsigned long long address, unsigned long long val){
+    memory[address] = (unsigned char)val;
+    memory[address+1] = (unsigned char)(val>>8);
+    memory[address+2] = (unsigned char)(val>>16);
+    memory[address+3] = (unsigned char)(val>>24);
+    memory[address+4] = (unsigned char)(val>>32);
+    memory[address+5] = (unsigned char)(val>>40);
+    memory[address+6] = (unsigned char)(val>>48);
+    memory[address+7] = (unsigned char)(val>>56);
 }

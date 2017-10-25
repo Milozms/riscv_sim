@@ -3,5 +3,5 @@ project(riscv_sim)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(SOURCE_FILES Simulation.cpp Simulation.h Reg_def.h)
+set(SOURCE_FILES Simulation.cpp Simulation.h Reg_def.h Read_Elf.cpp Read_Elf.h)
 add_executable(riscv_sim ${SOURCE_FILES})

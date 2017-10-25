@@ -205,7 +205,9 @@ void read_elf_sections()
 		}
 		else if(strcmp(name, ".data") == 0)
 		{
+            int64touint(elf64_shdr.sh_offset, &dadr);
 			int64toull(elf64_shdr.sh_addr, &gp);
+            int64toull(elf64_shdr.sh_size, &dsize);
 		}
 		else if(strcmp(name, ".symtab") == 0)
 		{

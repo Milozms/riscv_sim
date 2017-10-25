@@ -3,6 +3,7 @@ using namespace std;
 
 extern void read_elf(char* filename);
 extern unsigned int cadr;
+extern unsigned int dadr;
 extern unsigned int csize;
 extern unsigned long long dsize;
 extern unsigned int vadr;
@@ -26,6 +27,8 @@ void disp_memory(int addr, int size, int blocks);
 #define PRINT_PC
 #define PRINT_MEM
 #define PRINT_WB
+
+#define PRINT_ARR
 //#define STEP
 
 //指令运行数
@@ -40,6 +43,7 @@ void load_memory()
 {
 	fseek(file,cadr,SEEK_SET);
 	fread(&memory[vadr],1,csize,file);
+	fseek(file,dadr,SEEK_SET);
 	fread(&memory[gp],1,dsize,file);
 
 	//vadr=vadr>>2;
@@ -95,6 +99,11 @@ void simulate()
 			break;
 
 		reg[0]=0;//一直为零
+
+#ifdef PRINT_ARR
+        disp_memory(0x11010, 4, 10);
+#endif
+		printf("\n");
 
 	}
 }
@@ -814,6 +823,7 @@ void WB()
         printf("Write val %lld into register %d\n", Writeval, Reg_Dst);
 #endif
 	}
+
 }
 
 void disp_reg(){
@@ -830,38 +840,50 @@ void disp_reg(){
 void disp_memory(int addr, int size, int blocks){
 	if(size == 1){
 		for(int i=0;i<blocks;++i){
-			printf("%#.8x: %#.2x", addr, memory[addr]);
-			if((i+1)%16==0){
+			printf("%#.8x: %#.2x\t", addr, memory[addr]);
+			if((i+1)%32==0){
 				printf("\n");
 			}
 			addr += 1;
 		}
+		if(blocks%32!=0){
+			printf("\n");
+		}
 	}
 	else if(size == 2){
 		for(int i=0;i<blocks;++i){
-			printf("%#.8x: %#.4x", addr, read_mem_2(addr));
-			if((i+1)%8==0){
+			printf("%#.8x: %#.4x\t", addr, read_mem_2(addr));
+			if((i+1)%16==0){
 				printf("\n");
 			}
 			addr += 2;
 		}
+		if(blocks%16!=0){
+			printf("\n");
+		}
 	}
 	else if(size == 4){
 		for(int i=0;i<blocks;++i){
-			printf("%#.8x: %#.8x", addr, read_mem_4(addr));
-			if((i+1)%4==0){
+			printf("%#.8x: %#.8x\t", addr, read_mem_4(addr));
+			if((i+1)%8==0){
 				printf("\n");
 			}
 			addr += 4;
 		}
+		if(blocks%8!=0){
+			printf("\n");
+		}
 	}
 	else if(size == 8){
 		for(int i=0;i<blocks;++i){
-			printf("%#.8x: %#.16x", addr, read_mem_4(addr));
-			if((i+1)%2==0){
+			printf("%#.8x: %#.16x\t", addr, read_mem_4(addr));
+			if((i+1)%4==0){
 				printf("\n");
 			}
 			addr += 8;
+		}
+		if(blocks%4!=0){
+			printf("\n");
 		}
 	}
 	else{

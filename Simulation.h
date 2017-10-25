@@ -98,7 +98,6 @@
 
 //主存
 unsigned char memory[MAX]={0};
-unsigned char datamemory[MAX]={0};
 //寄存器堆
 REG reg[32]={0};
 //PC

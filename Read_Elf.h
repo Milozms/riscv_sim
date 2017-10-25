@@ -133,6 +133,7 @@ void read_Phdr();
 
 //代码段在解释文件中的偏移地址
 unsigned int cadr=0;
+unsigned int dadr=0;
 
 //代码段的长度
 unsigned int csize=0;

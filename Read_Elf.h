@@ -142,7 +142,7 @@ unsigned int vadr=0;
 
 //全局数据段在内存的地址
 unsigned long long gp=0;
-
+unsigned long long dsize = 0;
 //main函数在内存中地址
 unsigned int madr=0;
 

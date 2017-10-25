@@ -291,7 +291,7 @@ void read_symtable()
 			int64touint(elf64_sym.st_value, &madr);
 			entry = madr;
 			int64touint(elf64_sym.st_size, &endPC);
-			endPC += entry;
+			endPC += entry - 3;
 		}
 		/*else if(strcmp(name, "_exit") == 0)
 		{

@@ -2,6 +2,8 @@ typedef unsigned long long REG;
 enum ALUOPs {NONE, ADD, SUB, MUL, SLL, SRA, SRL, AND, XOR, OR, DIV};
 enum branch_cond {NEVER, ALWAYS, EQ, NE, LT, GE};
 enum newPC_Source {NObranch, ALUOUT, ALUOUT_0};
+enum ALUa_Source {RS, PCval, ZERO};
+enum ALUb_Source {RT, IMM, FOUR};
 
 struct IFID{
 	unsigned int inst;
@@ -15,7 +17,8 @@ struct IDEX{
 	int Imm;
 	REG Reg_Rs,Reg_Rt;
 
-	char Ctrl_EX_ALUSrc;
+	ALUa_Source Ctrl_EX_ALUSrc_a;
+    ALUb_Source Ctrl_EX_ALUSrc_b;
 	ALUOPs Ctrl_EX_ALUOp;
 	char Ctrl_EX_RegDst;
 
@@ -32,10 +35,10 @@ struct IDEX{
 
 struct EXMEM{
 	int PC;
-	int Reg_dst;
+	int Reg_dst, Imm;
 	REG ALU_out, rem;
 	int Zero, Sign;
-	REG Reg_Rt;
+	REG Reg_Rt, Reg_Rs;
 
 	branch_cond Ctrl_M_Branch; //condition for branch
 	char Ctrl_M_MemWrite; //num of bytns written

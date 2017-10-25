@@ -86,7 +86,7 @@
 #define F3_SCALL 0
 #define F7_SCALL 0
 
-#define OP_JALR 113
+#define OP_JALR 103
 #define F3_JALR 0
 
 #define OP_AUIPC 23
@@ -98,6 +98,7 @@
 
 //主存
 unsigned char memory[MAX]={0};
+unsigned char datamemory[MAX]={0};
 //寄存器堆
 REG reg[32]={0};
 //PC

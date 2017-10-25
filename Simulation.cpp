@@ -4,6 +4,7 @@ using namespace std;
 extern void read_elf(char* filename);
 extern unsigned int cadr;
 extern unsigned int csize;
+extern unsigned long long dsize;
 extern unsigned int vadr;
 extern unsigned long long gp;
 extern unsigned int madr;
@@ -39,6 +40,7 @@ void load_memory()
 {
 	fseek(file,cadr,SEEK_SET);
 	fread(&memory[vadr],1,csize,file);
+	fread(&memory[gp],1,dsize,file);
 
 	//vadr=vadr>>2;
 	//csize=csize>>2;
@@ -106,8 +108,8 @@ void IF()
 	printf("Fetching instruction at %x\n", PC);
 #endif
 	IF_ID_old.inst=read_mem_4(PC);
-	PC=PC+4;
 	IF_ID_old.PC=PC;
+	PC=PC+4;
 }
 
 //译码
@@ -417,7 +419,7 @@ void ID()
 		ALUSrc_b=RT;
 		RegWrite=0;
 		MemtoReg=0;
-		EXTop=0;
+		EXTop=1;
 		PCtoReg=0;
 		ALUop=SUB;//sub
 		newPCSrc = ALUOUT;
@@ -466,7 +468,7 @@ void ID()
 		ALUSrc_b=FOUR;
 		RegWrite=1;
 		MemtoReg=0;
-		EXTop=0;
+		EXTop=1;
 		PCtoReg=1;
 		ALUop=ADD;//???
 		Branch=ALWAYS;
@@ -487,8 +489,8 @@ void ID()
 		ALUSrc_b=FOUR;
 		RegWrite=1;
 		MemtoReg=0;
-		EXTop=0;
-		PCtoReg=1;
+		EXTop=1;
+		PCtoReg=0;
 		ALUop=ADD;//???
 		Branch=ALWAYS;
 		newPCSrc = ALUOUT_0;
@@ -675,6 +677,8 @@ void EX()
 	EX_MEM_old.Zero=Zero;
 	EX_MEM_old.Sign=Sign;
 	EX_MEM_old.Reg_Rt=ID_EX.Reg_Rt; //???
+	EX_MEM_old.Reg_Rs=ID_EX.Reg_Rs;
+	EX_MEM_old.Imm=ID_EX.Imm;
 	EX_MEM_old.Ctrl_M_Branch=ID_EX.Ctrl_M_Branch;
 	EX_MEM_old.Ctrl_M_MemRead=ID_EX.Ctrl_M_MemRead;
 	EX_MEM_old.Ctrl_M_MemWrite=ID_EX.Ctrl_M_MemWrite;
@@ -692,6 +696,8 @@ void MEM()
 	branch_cond Branch = EX_MEM.Ctrl_M_Branch;
 	REG ALUout = EX_MEM.ALU_out;
 	REG Reg_Rt = EX_MEM.Reg_Rt;
+	REG Reg_Rs = EX_MEM.Reg_Rs;
+	int Imm = EX_MEM.Imm;
 	int Zero = EX_MEM.Zero;
 	int Sign = EX_MEM.Sign;
 	char MemWrite = EX_MEM.Ctrl_M_MemWrite;
@@ -702,12 +708,12 @@ void MEM()
 	unsigned long long Mem_read = 0;
 	//complete Branch instruction PC change
 	if(newPCSrc==ALUOUT){
-		newPC = temp_PC + imm12<<1;
+		newPC = temp_PC + Imm;
 		//newPC = ALUout;
 	}
 	else if(newPCSrc==ALUOUT_0){
-		newPC = (temp_PC + imm12)<<1;
-		//newPC = ALUout<<1;
+		newPC = (Reg_Rs + Imm) & (-2);
+		//newPC = ALUout;
 	}
 	switch(Branch){
 		case EQ:

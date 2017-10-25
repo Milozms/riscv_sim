@@ -29,7 +29,7 @@ void disp_memory(int addr, int size, int blocks);
 #define PRINT_WB
 
 #define PRINT_ARR
-//#define STEP
+#define STEP
 
 //指令运行数
 long long inst_num=0;
@@ -101,6 +101,7 @@ void simulate()
 		reg[0]=0;//一直为零
 
 #ifdef PRINT_ARR
+        disp_reg();
         disp_memory(0x11010, 4, 10);
 #endif
 		printf("\n");
@@ -334,7 +335,7 @@ void ID()
 		ALUSrc_b=IMM;
 		RegWrite=0;
 		MemtoReg=0;
-		EXTop=0;
+		EXTop=1;
 		PCtoReg=0;
 		ALUop=ADD;//add
 		if(fuc3==F3_SB){
@@ -464,9 +465,9 @@ void ID()
 	else if(OP==OP_JAL)
 	{
 		unsigned imm19_19 = getbit(inst, 31, 31);
-		unsigned imm9_0 = getbit(inst, 30, 21);
+		unsigned imm9_0 = getbit(inst, 21, 30);
 		unsigned imm10_10 = getbit(inst, 20, 20);
-		unsigned imm18_11 = getbit(inst, 19, 12);
+		unsigned imm18_11 = getbit(inst, 12, 19);
 		imm20 = (imm19_19<<19) | (imm18_11<<11) | (imm10_10<<10) |(imm9_0);
 		EXTsrc = imm20<<1;
 		immlen = 21;
@@ -478,7 +479,7 @@ void ID()
 		RegWrite=1;
 		MemtoReg=0;
 		EXTop=1;
-		PCtoReg=1;
+		PCtoReg=0;
 		ALUop=ADD;//???
 		Branch=ALWAYS;
 		newPCSrc = ALUOUT;
@@ -753,11 +754,11 @@ void MEM()
 		if (MemRead == 8) {
 			Mem_read = read_mem_8(address);
 		} else if (MemRead == 4) {
-			Mem_read = read_mem_4(address);
+			Mem_read = (REG)ext_signed_64(read_mem_4(address), 1, 32);
 		} else if (MemRead == 2) {
-			Mem_read = read_mem_2(address);
+			Mem_read = (REG)ext_signed_64(read_mem_2(address), 1, 32);
 		} else if (MemRead == 1) {
-			Mem_read = memory[address];
+			Mem_read = (REG)ext_signed_64(memory[address], 1, 32);
 		} else{
 			printf("Memory Read Error!\n");
 		}
@@ -828,13 +829,10 @@ void WB()
 
 void disp_reg(){
 	printf("Registers:\n");
-	for(int i=0;i<8;++i){
-		for(int j=0;j<4;++j){
-			int index = i*8+j;
-			printf("%d: %#llx\t", index, reg[index]);
-		}
-		printf("\n");
+	for(int i=0;i<32;++i){
+		printf("%d: %#llx\t", i, reg[i]);
 	}
+	printf("\n");
 }
 
 void disp_memory(int addr, int size, int blocks){

@@ -133,7 +133,8 @@ void WB();
 
 
 //符号扩展
-int ext_signed(unsigned int src, char EXTop, int len);
+int ext_signed(unsigned int src, int EXTop, int len);
+long long ext_signed_64(unsigned long long src, int EXTop, int len);
 
 //获取指定位
 unsigned int getbit(unsigned inst, int s,int e);//???
@@ -164,3 +165,17 @@ int ext_signed(unsigned int src, int EXTop, int len)
 	}
 }
 
+long long ext_signed_64(unsigned long long src, int EXTop, int len){
+	if(EXTop==0){
+		return (long long)src;
+	}
+	else{
+		long long sign = src>>(len-1);
+		long long mask = (-1)<<len;
+		if(sign){
+			return mask|((int)src);
+		}
+		else
+			return (long long)src;
+	}
+}

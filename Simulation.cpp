@@ -267,7 +267,7 @@ void ID()
 		ALUSrc_b=IMM;
 		RegWrite=1;
 		MemtoReg=0;
-		EXTop=0;
+		EXTop=1;
 		PCtoReg=0;
 		if(fuc3==F3_ADDI){//addi
 			ALUop=ADD;
@@ -378,7 +378,7 @@ void ID()
 		ALUSrc_b=IMM;
 		RegWrite=1;
 		MemtoReg=1;
-		EXTop=0;
+		EXTop=1;
 		PCtoReg=0;
 		ALUop=ADD;//add
 		if(fuc3==F3_LB){
@@ -561,7 +561,7 @@ void ID()
 		PCtoReg=0;
 		ALUop=ADD;
 #ifdef PRINT_INST
-		printf("Decoding: lui, %d, %d\n", rd,imm12);
+		printf("Decoding: lui, %d, %#x\n", rd,imm20);
 #endif
 	}
 	else if(OP==OP_SCALL && fuc3==F3_SCALL && fuc7==F7_SCALL){
@@ -644,7 +644,7 @@ void EX()
 		case SUB:
 			ALUout = ALU_a - ALU_b;
 			Zero = (ALUout == 0);
-			Sign = (ALU_a < ALU_b);
+			Sign = ((long long)ALU_a < (long long)ALU_b);
 			break;
 		case MUL:
 			ALUout = ALU_a * ALU_b;
@@ -756,9 +756,9 @@ void MEM()
 		} else if (MemRead == 4) {
 			Mem_read = (REG)ext_signed_64(read_mem_4(address), 1, 32);
 		} else if (MemRead == 2) {
-			Mem_read = (REG)ext_signed_64(read_mem_2(address), 1, 32);
+			Mem_read = (REG)ext_signed_64(read_mem_2(address), 1, 16);
 		} else if (MemRead == 1) {
-			Mem_read = (REG)ext_signed_64(memory[address], 1, 32);
+			Mem_read = (REG)ext_signed_64(memory[address], 1, 8);
 		} else{
 			printf("Memory Read Error!\n");
 		}

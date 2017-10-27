@@ -171,9 +171,9 @@ long long ext_signed_64(unsigned long long src, int EXTop, int len){
 	}
 	else{
 		long long sign = src>>(len-1);
-		long long mask = (-1)<<len;
+		long long mask = ((unsigned long long)(-1))<<len;
 		if(sign){
-			return mask|((int)src);
+			return mask|((long long)src);
 		}
 		else
 			return (long long)src;

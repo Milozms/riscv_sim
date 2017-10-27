@@ -1,5 +1,5 @@
 typedef unsigned long long REG;
-enum ALUOPs {NONE, ADD, SUB, MUL, SLL, SRA, SRL, AND, XOR, OR, DIV};
+enum ALUOPs {NONE, ADD, SUB, MUL, MULH, SLL, SRA, SRL, AND, XOR, OR, DIV};
 enum branch_cond {NEVER, ALWAYS, EQ, NE, LT, GE};
 enum newPC_Source {NObranch, ALUOUT, ALUOUT_0};
 enum ALUa_Source {RS, PCval, ZERO};

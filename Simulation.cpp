@@ -272,7 +272,7 @@ void ID()
             }
         }
         else if(fuc3==F3_MULH && fuc7==F7_MULH){//mulh
-            ALUop=MUL;
+            ALUop=MULH;
             if(print_inst){
                 printf("Decoding: mulh, %d, %d, %d\n", rd,rs,rt);
             }
@@ -641,7 +641,9 @@ void ID()
         }
     }
     else if(OP==OP_SCALL && fuc3==F3_SCALL && fuc7==F7_SCALL){
-        invalid_inst();
+        if(reg[10]==1){
+            printf("%lld\n", reg[11]);
+        }
     }
     else if(OP==OP_RW){
         RegDst=rd;
@@ -749,6 +751,8 @@ void EX()
         case MUL:
             ALUout = ALU_a * ALU_b;
             break;
+        case MULH:
+            ALUout = (REG)(((__uint128_t)ALU_a*(__uint128_t)ALU_b)>>64);
         case SLL:
             ALUout = ALU_a << ALU_b;
             break;

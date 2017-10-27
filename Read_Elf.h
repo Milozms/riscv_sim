@@ -153,6 +153,8 @@ unsigned int endPC=0;
 //程序的入口地址
 unsigned int entry=0;
 
+unsigned long long global_pointer;
+
 FILE *file=NULL;
 
 

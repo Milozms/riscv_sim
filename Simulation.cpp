@@ -11,6 +11,7 @@ extern unsigned long long gp;
 extern unsigned int madr;
 extern unsigned int endPC;
 extern unsigned int entry;
+extern unsigned long long global_pointer;
 extern FILE *file;
 
 unsigned short read_mem_2(unsigned long long address);
@@ -24,7 +25,7 @@ void disp_memory(int addr, int size, int blocks);
 
 bool print_fetch = false, print_inst = false, print_aluinfo = false, print_pc = false, print_mem = false, print_wb = false;
 bool onestep = false;
-//#define PRINT_ARR
+//#define DBG
 
 //指令运行数
 long long inst_num=0;
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
     PC=entry;
 
     //设置全局数据段地址寄存器
-    reg[3]=gp;
+    reg[3]=global_pointer;
 
     reg[2]=MAX/2;//栈基址 （sp寄存器）
 
@@ -126,6 +127,16 @@ bool parse_dbg_cmd(){
     return false;
 }
 
+void invalid_inst(){
+    printf("Invalid Instruction!");
+    while(true){
+        bool cont = parse_dbg_cmd();
+        if(cont)
+            break;
+    }
+    exit(0);
+}
+
 void simulate()
 {
     //结束PC的设置
@@ -157,9 +168,9 @@ void simulate()
 
         reg[0] = 0;//一直为零
 
-#ifdef PRINT_ARR
+#ifdef DBG
         disp_reg();
-        disp_memory(0x11010, 4, 10);
+        disp_memory(0x117d0, 4, 4);
 #endif
         if(print_fetch || onestep) {
             printf("\n");
@@ -317,7 +328,7 @@ void ID()
         else
         {
             ALUop=NONE;
-            printf("Invalid Instruction!");
+            invalid_inst();
         }
     }
     else if(OP==OP_I)
@@ -384,7 +395,7 @@ void ID()
         }
         else{
             ALUop=NONE;
-            printf("Invalid Instruction!");
+            invalid_inst();
         }
     }
     else if(OP==OP_SW)
@@ -429,7 +440,7 @@ void ID()
         }
         else{
             MemWrite=0;
-            printf("Invalid Instruction!");
+            invalid_inst();
         }
     }
     else if(OP==OP_LW)
@@ -475,7 +486,7 @@ void ID()
         }
         else{
             MemRead=0;
-            printf("Invalid Instruction!");
+            invalid_inst();
         }
     }
     else if(OP==OP_BEQ)
@@ -523,7 +534,7 @@ void ID()
             }
         }
         else{
-            printf("Invalid Instruction!");
+            invalid_inst();
             Branch=NEVER;
         }
     }
@@ -630,10 +641,34 @@ void ID()
         }
     }
     else if(OP==OP_SCALL && fuc3==F3_SCALL && fuc7==F7_SCALL){
-
+        invalid_inst();
+    }
+    else if(OP==OP_RW){
+        RegDst=rd;
+        Branch=NEVER;
+        MemRead=0;
+        ALUSrc_a=RS;
+        ALUSrc_b=RT;
+        RegWrite=1;
+        MemtoReg=0;
+        EXTop=0;
+        PCtoReg=0;
+        if(fuc3==F3_ADDW && fuc7==F7_ADDW)//add
+        {
+            ALUop=ADD;
+            if(print_inst){
+                printf("Decoding: addw, %d, %d, %d\n", rd,rs,rt);
+            }
+        }
+        else if(fuc3==F3_MULW && fuc7==F7_MULW){//mul
+            ALUop=MUL;
+            if(print_inst){
+                printf("Decoding: mulw, %d, %d, %d\n", rd,rs,rt);
+            }
+        }
     }
     else{
-        printf("Invalid Instruction!");
+        invalid_inst();
     }
 
     //write ID_EX_old

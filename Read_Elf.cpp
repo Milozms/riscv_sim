@@ -1,6 +1,6 @@
 #include "Read_Elf.h"
 
-FILE *elf = NULL;
+FILE *elf=NULL;
 FILE *fstr = NULL;
 Elf64_Ehdr elf64_hdr;
 
@@ -98,7 +98,7 @@ void read_Elf_header()
 	//file should be relocated
 	//buffer,size,cnt, stream
 	fread(&elf64_hdr,1,sizeof(elf64_hdr),file);
-		
+
 	fprintf(elf," magic number:  ");
 	for(int i = 0; i < 16; ++i)
 	{
@@ -117,7 +117,7 @@ void read_Elf_header()
 		default:
 			break;
 	}
-	
+
 	fprintf(elf," Data:  little-endian\n");
 	switch(elf64_hdr.e_ident[5])
 	{
@@ -130,15 +130,15 @@ void read_Elf_header()
 		default:
 			break;
 	}
-		
+
 	fprintf(elf," Version:   1 (current)\n");
 
 	fprintf(elf," OS/ABI:	 System V ABI\n");
-	
+
 	fprintf(elf," ABI Version:   \n");
-	
+
 	fprintf(elf," Type:  ");
-	
+
 	fprintf(elf," Machine:   \n");
 
 	fprintf(elf," Version:  0x%x\n", elf64_hdr.e_version);
@@ -170,13 +170,13 @@ void read_Elf_header()
 
 	int16touint(elf64_hdr.e_shstrndx, &s_index);
 	fprintf(elf," Section header string table index:   %d\n", s_index);
-	
+
 	fseek(fstr, s_index * ssize + sadr, SEEK_SET);
 	Elf64_Shdr elf64_shdr;
 	fread(&elf64_shdr, 1, sizeof(elf64_shdr), fstr);
 	int64touint(elf64_shdr.sh_offset, &stradr);
 
-	return;	
+	return;
 }
 
 void read_elf_sections()
@@ -190,7 +190,7 @@ void read_elf_sections()
 	for(int c=0;c<snum;c++)
 	{
 		fprintf(elf," [%3d]\n",c);
-		
+
 		//file should be relocated
 		fread(&elf64_shdr,1,sizeof(elf64_shdr),file);
 
@@ -205,16 +205,21 @@ void read_elf_sections()
 		}
 		else if(strcmp(name, ".data") == 0)
 		{
-            int64touint(elf64_shdr.sh_offset, &dadr);
 			int64toull(elf64_shdr.sh_addr, &gp);
-            int64toull(elf64_shdr.sh_size, &dsize);
+			int64touint(elf64_shdr.sh_offset, &dadr);
+			int64toull(elf64_shdr.sh_size, &dsize);
+		}
+		else if(strcmp(name, ".bss") == 0)
+		{
+			//int64touint(elf64_shdr.sh_offset, &badr);
+			//int64touint(elf64_shdr.sh_size, &bsize);
+			//int64toull(elf64_shdr.sh_addr, &gb);
 		}
 		else if(strcmp(name, ".symtab") == 0)
 		{
 			int64touint(elf64_shdr.sh_offset, &symadr);
 			int64touint(elf64_shdr.sh_size, &symsize);
 			symnum = symsize / sizeof(Elf64_Sym);
-			printf("%x, %x, %d\n", symadr, symsize, symnum);
 		}
 		else if(strcmp(name, ".strtab") == 0)
 		{
@@ -232,14 +237,14 @@ void read_elf_sections()
 		fprintf(elf," Entsize:  %x", elf64_shdr.sh_entsize);
 
 		fprintf(elf," Flags:   %x", elf64_shdr.sh_flags);
-		
+
 		fprintf(elf," Link:  %x", elf64_shdr.sh_link);
 
 		fprintf(elf," Info:  %x", elf64_shdr.sh_info);
 
 		fprintf(elf," Align: %x\n", elf64_shdr.sh_addralign);
 
- 	}
+	}
 }
 
 void read_Phdr()
@@ -250,24 +255,24 @@ void read_Phdr()
 	for(int c=0;c<pnum;c++)
 	{
 		fprintf(elf," [%3d]\n",c);
-			
+
 		//file should be relocated
 		fread(&elf64_phdr,1,sizeof(elf64_phdr),file);
 
 		fprintf(elf," Type:   %x", elf64_phdr.p_type);
-		
+
 		fprintf(elf," Flags:   %x", elf64_phdr.p_flags);
-		
+
 		fprintf(elf," Offset:   %x", elf64_phdr.p_offset);
-		
+
 		fprintf(elf," VirtAddr:  %x", elf64_phdr.p_vaddr);
-		
+
 		fprintf(elf," PhysAddr:   %x", elf64_phdr.p_paddr);
 
 		fprintf(elf," FileSiz:   %x", elf64_phdr.p_filesz);
 
 		fprintf(elf," MemSiz:   %x", elf64_phdr.p_memsz);
-		
+
 		fprintf(elf," Align:   %x", elf64_phdr.p_align);
 	}
 }
@@ -282,7 +287,7 @@ void read_symtable()
 	for(int c=0;c<symnum;c++)
 	{
 		fprintf(elf," [%3d]   ",c);
-		
+
 		//file should be relocated
 		fread(&elf64_sym,1,sizeof(elf64_sym),file);
 		fseek(fstr, s_index + *((unsigned int*)(elf64_sym.st_name.b)), SEEK_SET);
@@ -291,24 +296,29 @@ void read_symtable()
 		if(strcmp(name, "main") == 0)
 		{
 			int64touint(elf64_sym.st_value, &madr);
+			int64touint(elf64_sym.st_value, &endPC);
+			unsigned int st_size;
+			int64touint(elf64_sym.st_size, &st_size);
 			entry = madr;
-			int64touint(elf64_sym.st_size, &endPC);
-			endPC += entry - 3;
+			endPC += st_size - 3;
 		}
-		/*else if(strcmp(name, "_exit") == 0)
+		/*
+		else if(strcmp(name, "_exit") == 0)
 		{
 			unsigned int st_size;
 			int64touint(elf64_sym.st_value, &endPC);
 			int64touint(elf64_sym.st_size, &st_size);
-			endPC += st_size;
+			endPC += st_size - 3;
 		}*/
-
+		else if(strcmp(name, "__global_pointer$") == 0){
+			int64toull(elf64_sym.st_value, &global_pointer);
+		}
 		fprintf(elf," Bind:   %d", elf64_sym.st_info);
-		
+
 		fprintf(elf," Type:   %d", elf64_sym.st_info);
-		
+
 		fprintf(elf," NDX:   %x", elf64_sym.st_shndx);
-		
+
 		fprintf(elf," Size:   %x", elf64_sym.st_size);
 
 		fprintf(elf," Value:   %x\n", elf64_sym.st_value);

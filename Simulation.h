@@ -3,6 +3,7 @@
 #include<math.h>
 //#include <io.h>
 //#include <process.h>
+#include <unistd.h>
 #include<time.h>
 #include<stdlib.h>
 #include"Reg_def.h"
@@ -78,7 +79,10 @@
 #define F3_ADDIW 0
 
 #define OP_RW 59
+#define F3_MULW 0
 #define F3_ADDW 0
+
+#define F7_MULW 1
 #define F7_ADDW 0
 
 

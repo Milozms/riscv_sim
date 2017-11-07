@@ -300,7 +300,7 @@ void read_symtable()
 			unsigned int st_size;
 			int64touint(elf64_sym.st_size, &st_size);
 			entry = madr;
-			endPC += st_size - 3;
+			endPC += st_size - 4;
 		}
 		/*
 		else if(strcmp(name, "_exit") == 0)

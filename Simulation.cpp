@@ -142,7 +142,7 @@ void simulate()
     //结束PC的设置
     //int end=(int)endPC/4-1;
     int end = endPC;
-    while(PC!=end) {
+    while(PC<end) {
         //运行
         IF();
         if(onestep){
@@ -821,13 +821,13 @@ void MEM()
     int newPC = 0;
     unsigned long long Mem_read = 0;
     //complete Branch instruction PC change
-    if(newPCSrc==ALUOUT){
+    if(newPCSrc==ALUOUT){//JAL/BEQ
         newPC = temp_PC + Imm;
         //newPC = ALUout;
     }
-    else if(newPCSrc==ALUOUT_0){
+    else if(newPCSrc==ALUOUT_0){//JALR
         newPC = (Reg_Rs + Imm) & (-2);
-        //newPC = ALUout;
+        //newPC = ALUout & (-2);
     }
     switch(Branch){
         case EQ:

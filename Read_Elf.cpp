@@ -313,6 +313,9 @@ void read_symtable()
 		else if(strcmp(name, "__global_pointer$") == 0){
 			int64toull(elf64_sym.st_value, &global_pointer);
 		}
+        else if(strcmp(name, "_gp") == 0){
+            int64toull(elf64_sym.st_value, &global_pointer);
+        }
 		fprintf(elf," Bind:   %d", elf64_sym.st_info);
 
 		fprintf(elf," Type:   %d", elf64_sym.st_info);

@@ -170,7 +170,7 @@ void simulate()
 
 #ifdef DBG
         disp_reg();
-        disp_memory(0x117d0, 4, 4);
+        disp_memory(0x116b8, 4, 42);
 #endif
         if(print_fetch || onestep) {
             printf("\n");

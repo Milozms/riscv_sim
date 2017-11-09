@@ -77,6 +77,8 @@
 
 #define OP_IW 27
 #define F3_ADDIW 0
+#define F3_SLLIW 1
+#define F3_SRLIW 5
 
 #define OP_RW 59
 #define F3_MULW 0

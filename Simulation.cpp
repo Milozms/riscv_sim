@@ -343,58 +343,66 @@ void ID()
         ALUSrc_b=IMM;
         RegWrite=1;
         MemtoReg=0;
-        EXTop=1;
         PCtoReg=0;
         if(fuc3==F3_ADDI){//addi
             ALUop=ADD;
+            EXTop=1;
             if(print_inst){
                 printf("Decoding: addi, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_SLLI && fuc7==F7_SLLI){//slli
             ALUop=SLL;
+            EXTop=0;
             if(print_inst){
                 printf("Decoding: slli, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_SLTI){//slti
             ALUop=SUB;
+            EXTop=1;
             if(print_inst){
                 printf("Decoding: slti, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_XORI){//xori
             ALUop=XOR;
+            EXTop=0;
             if(print_inst){
                 printf("Decoding: xori, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_SRLI && fuc7==F7_SRLI){//srli
             ALUop=SRL;
+            EXTop=0;
             if(print_inst){
                 printf("Decoding: srli, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_SRAI && fuc7==F7_SRAI){//srai
             ALUop=SRA;
+            EXTop=0;
             if(print_inst){
                 printf("Decoding: srai, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_ORI){//ori
             ALUop=OR;
+            EXTop=0;
             if(print_inst){
                 printf("Decoding: ori, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else if(fuc3==F3_ANDI){//andi
             ALUop=AND;
+            EXTop=0;
             if(print_inst){
                 printf("Decoding: andi, %d, %d, %d\n", rd,rs,imm12);
             }
         }
         else{
             ALUop=NONE;
+            EXTop=0;
             invalid_inst();
         }
     }
@@ -584,22 +592,38 @@ void ID()
             printf("Decoding: jalr, %d, %d, %#x\n", rd, rs, imm12);
         }
     }
-    else if(OP==OP_IW && fuc3==F3_ADDIW){
+    else if(OP==OP_IW){
         EXTsrc = imm12 = getbit(inst, 20, 31);
         immlen = 12;
-        RegDst=rd;
-        Branch=NEVER;
-        MemRead=0;
-        MemWrite=0;
-        ALUSrc_a=RS;
-        ALUSrc_b=IMM;
-        RegWrite=1;
-        MemtoReg=0;
-        EXTop=1;
-        PCtoReg=0;
-        ALUop=ADD;
-        if(print_inst){
-            printf("Decoding: addiw, %d, %d, %d\n", rd,rs,imm12);
+        RegDst = rd;
+        Branch = NEVER;
+        MemRead = 0;
+        MemWrite = 0;
+        ALUSrc_a = RS;
+        ALUSrc_b = IMM;
+        RegWrite = 1;
+        MemtoReg = 0;
+        PCtoReg = 0;
+        if(fuc3==F3_ADDIW) {
+            EXTop = 1;
+            ALUop = ADD;
+            if (print_inst) {
+                printf("Decoding: addiw, %d, %d, %d\n", rd, rs, imm12);
+            }
+        }
+        else if(fuc3==F3_SLLIW){
+            EXTop = 0;
+            ALUop = SLL;
+            if (print_inst) {
+                printf("Decoding: slliw, %d, %d, %d\n", rd, rs, imm12);
+            }
+        }
+        else if(fuc3==F3_SRLIW){
+            EXTop = 0;
+            ALUop = SRL;
+            if (print_inst) {
+                printf("Decoding: srliw, %d, %d, %d\n", rd, rs, imm12);
+            }
         }
     }
     else if(OP==OP_AUIPC){

@@ -30,6 +30,7 @@ struct IDEX{
 	char Ctrl_WB_RegWrite;
 	char Ctrl_WB_MemtoReg;
     char Ctrl_WB_PCtoReg;
+    int target;
 
 }ID_EX,ID_EX_old;
 

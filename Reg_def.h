@@ -4,16 +4,22 @@ enum branch_cond {NEVER, ALWAYS, EQ, NE, LT, GE};
 enum newPC_Source {NObranch, ALUOUT, ALUOUT_0};
 enum ALUa_Source {RS, PCval, ZERO};
 enum ALUb_Source {RT, IMM, FOUR};
+enum inst_type{
+    NONTYPE, ROP, IOP, BRC, MEMR, MEMW, BRC_WB
+};
 
 struct IFID{
 	unsigned int inst;
-	int PC;
+	int inst_addr;
+    bool bubble;
 }IF_ID,IF_ID_old;
 
 
 struct IDEX{
-	int Rd,Rt;
-	int PC;
+    inst_type itype;
+    bool bubble;
+	int Rd,Rt,Rs;
+	int inst_addr;
 	int Imm;
 	REG Reg_Rs,Reg_Rt;
 
@@ -35,7 +41,11 @@ struct IDEX{
 }ID_EX,ID_EX_old;
 
 struct EXMEM{
-	int PC;
+    inst_type itype;
+    bool jump;
+    bool bubble;
+    int Rd,Rt,Rs;
+	int inst_addr;
 	int Reg_dst, Imm;
 	REG ALU_out, rem;
 	int Zero, Sign;
@@ -53,6 +63,10 @@ struct EXMEM{
 }EX_MEM,EX_MEM_old;
 
 struct MEMWB{
+    inst_type itype;
+    bool bubble;
+    int inst_addr;
+    int Rd,Rt,Rs;
 	unsigned long long Mem_read;
 	REG ALU_out;
 	int Reg_dst;

@@ -134,6 +134,8 @@ void read_Phdr();
 //代码段在解释文件中的偏移地址
 unsigned int cadr=0;
 unsigned int dadr=0;
+unsigned int sdata_offset=0;
+unsigned long long sdata_adr=0;
 
 //代码段的长度
 unsigned int csize=0;
@@ -144,6 +146,7 @@ unsigned int vadr=0;
 //全局数据段在内存的地址
 unsigned long long gp=0;
 unsigned long long dsize = 0;
+unsigned long long sdata_size = 0;
 //main函数在内存中地址
 unsigned int madr=0;
 

@@ -209,6 +209,12 @@ void read_elf_sections()
 			int64touint(elf64_shdr.sh_offset, &dadr);
 			int64toull(elf64_shdr.sh_size, &dsize);
 		}
+		else if(strcmp(name, ".sdata") == 0)
+		{
+			int64toull(elf64_shdr.sh_addr, &sdata_adr);
+			int64touint(elf64_shdr.sh_offset, &sdata_offset);
+			int64toull(elf64_shdr.sh_size, &sdata_size);
+		}
 		else if(strcmp(name, ".bss") == 0)
 		{
 			//int64touint(elf64_shdr.sh_offset, &badr);

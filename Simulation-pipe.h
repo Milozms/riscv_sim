@@ -83,9 +83,13 @@
 #define OP_RW 59
 #define F3_MULW 0
 #define F3_ADDW 0
+#define F3_DIVW 4
+#define F3_SUBW 0
 
 #define F7_MULW 1
 #define F7_ADDW 0
+#define F7_DIVW 1
+#define F7_SUBW 32
 
 
 #define OP_SCALL 115 //ECALL
@@ -131,11 +135,11 @@ void load_memory();
 
 void simulate();
 
-void IF(bool stall, bool bubble);
+void IF();
 
-inst_type ID(bool stall, bool bubble);
+inst_type ID();
 
-void EX(bool stall, bool bubble);
+void EX();
 
 void MEM();
 

@@ -152,35 +152,39 @@ void simulate()
     EX_MEM.bubble=true;
     MEM_WB.bubble=true;
     while(PC<end) {
-        bool if_stall = false, if_bubble = false, id_stall = false, id_bubble = false,
-                ex_stall = false, ex_bubble = false;
+        int oldPC = PC;
+        bool if_stall = false, id_stall = false, id_bubble = false, ex_bubble = false;
         //运行
+        IF();
+        WB();
+        inst_type itype = ID();
+        EX();
+        MEM();
+
         //数据冒险
         //1a 1b
-        if(EX_MEM.Rd>0 && (EX_MEM.Rd == ID_EX.Rs || EX_MEM.Rd == ID_EX.Rt)){
-            id_stall = ex_bubble = true;
+        if(EX_MEM_old.Rd>0 && (EX_MEM_old.Rd == ID_EX_old.Rs || EX_MEM_old.Rd == ID_EX_old.Rt)){
+            if_stall = id_stall = ex_bubble = true;
             instruction_count -= 1;
         }
         //2a 2b
-        if(MEM_WB.Rd>0 && (MEM_WB.Rd == ID_EX.Rs || MEM_WB.Rd == ID_EX.Rt)){
-            id_stall = ex_bubble = true;
+        if(MEM_WB_old.Rd>0 && (MEM_WB_old.Rd == ID_EX_old.Rs || MEM_WB_old.Rd == ID_EX_old.Rt)){
+            if_stall = id_stall = ex_bubble = true;
             instruction_count -= 1;
         }
         //分支预测错误
 
-        if(EX_MEM.jump){
+        if(EX_MEM_old.jump){
+            if_stall = false;
             id_bubble = true;
             ex_bubble = true;
             instruction_count -= 2;
         }
-        IF(if_stall, if_bubble);
-        WB();
-        inst_type itype = ID(id_stall, id_bubble);
-        EX(ex_stall, ex_bubble);
-        MEM();
-
-        IF_ID = IF_ID_old;
+        if(if_stall) PC = oldPC;
+        if(!id_stall) IF_ID = IF_ID_old;
+        if(id_bubble) IF_ID.bubble = true;
         ID_EX = ID_EX_old;
+        if(ex_bubble) ID_EX.bubble = true;
         EX_MEM = EX_MEM_old;
         MEM_WB = MEM_WB_old;
         if (exit_flag == 1)
@@ -190,15 +194,29 @@ void simulate()
 
 #ifdef DBG
         disp_reg();
-        disp_memory(0x11778, 4, 1);
-        disp_memory(0x11760, 4, 1);
-        disp_memory(0x11764, 4, 1);
+        //1  2
+        //disp_memory(0x11778, 4, 1);
+        //disp_memory(0x11760, 4, 1);
+        //disp_memory(0x11764, 4, 1);
+        //3  4
+        //disp_memory(0x11010, 4, 5);
+        //disp_memory(0x11788, 4, 1);
+        //5
+        //disp_memory(0x11010, 4, 6);
+        //6
+        //disp_memory(0x11760, 4, 1);//result
+        //disp_memory(0x11778, 4, 1);//temp
+        //7 8
+        //disp_memory(0x11010, 4, 6);
+        //disp_memory(0x11778, 4, 1);
+        //9 10
+        disp_memory(0x11760, 4, 3);
 #endif
         if(print_fetch || onestep) {
             printf("\n");
         }
         instruction_count += 1;
-        clock_count += 1;
+        clock_count += alu_clock_cycles;
 
     }
     cout <<"simulate over!"<<endl;
@@ -212,21 +230,8 @@ void simulate()
 
 
 //取指令
-void IF(bool stall=false, bool bubble=false)
+void IF()
 {
-    if(stall){
-        if(print_fetch || onestep){
-            printf("Fetching stall at %x\n", IF_ID_old.inst_addr);
-        }
-        return;
-    }
-    if(bubble){
-        if(print_fetch || onestep){
-            printf("Fetching bubble.\n");
-        }
-        IF_ID_old.bubble = true;
-        return;
-    }
     //write IF_ID_old
     if(print_fetch || onestep){
         printf("Fetching instruction at %x\n", PC);
@@ -238,15 +243,9 @@ void IF(bool stall=false, bool bubble=false)
 }
 
 //译码
-inst_type ID(bool stall=false, bool bubble=false)
+inst_type ID()
 {
-    if(stall){
-        if(print_inst){
-            printf("Decoding stall.\n");
-        }
-        return NONTYPE;
-    }
-    if(bubble || IF_ID.bubble) {
+    if(IF_ID.bubble) {
         if(print_inst){
             printf("Decoding bubble.\n");
         }
@@ -779,6 +778,19 @@ inst_type ID(bool stall=false, bool bubble=false)
             }
             alu_clock_cycles = 1;
         }
+        else if(fuc3==F3_DIVW && fuc7==F7_DIVW){
+            ALUop=DIV;
+            if(print_inst){
+                printf("Decoding: divw, %d, %d, %d\n", rd,rs,rt);
+            }
+            alu_clock_cycles = 40;
+        }
+        else if(fuc3==F3_SUBW && fuc7==F7_SUBW){
+            ALUop=SUB;
+            if(print_inst){
+                printf("Decoding: addw, %d, %d, %d\n", rd,rs,rt);
+            }
+        }
         itype = IOP;
     }
     else{
@@ -817,15 +829,9 @@ inst_type ID(bool stall=false, bool bubble=false)
 }
 
 //执行
-void EX(bool stall=false, bool bubble=false)
+void EX()
 {
-    if(stall){
-        if(print_aluinfo){
-            printf("Execute stall.\n");
-        }
-        return;
-    }
-    if(bubble || ID_EX.bubble){
+    if(ID_EX.bubble){
         if(print_aluinfo){
             printf("Execute bubble.\n");
         }
@@ -930,7 +936,7 @@ void EX(bool stall=false, bool bubble=false)
         //newPC = ALUout;
     }
     else if(ID_EX.Ctrl_M_newPCSrc==ALUOUT_0){//JALR
-        target = (reg[rs] + ID_EX.Imm) & (-2);
+        target = (ID_EX.Reg_Rs + ID_EX.Imm) & (-2);
         //newPC = ALUout & (-2);
     }
     //branch complete

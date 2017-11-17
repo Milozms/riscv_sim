@@ -102,9 +102,6 @@
 #define MAX 100000000
 #define INST_LEN 32
 
-enum inst_type{
-    NONTYPE, ROP, IOP, BRC, MEMR, MEMW, BRC_WB
-};
 //主存
 unsigned char memory[MAX]={0};
 //寄存器堆

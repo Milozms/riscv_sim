@@ -27,7 +27,7 @@ void disp_memory(int addr, int size, int blocks);
 
 bool print_fetch = false, print_inst = false, print_aluinfo = false, print_pc = false, print_mem = false, print_wb = false;
 bool onestep = false;
-#define DBG
+//#define DBG
 
 //指令运行数
 long long inst_num=0;
@@ -143,7 +143,7 @@ void invalid_inst(){
 
 void simulate()
 {
-    int clock_count = 0, instruction_count = 0;
+    int clock_count = 0, instruction_count = 2, data_hazard = 0, control_hazard = 0;
     //结束PC的设置
     //int end=(int)endPC/4-1;
     int end = endPC;
@@ -160,17 +160,19 @@ void simulate()
         inst_type itype = ID();
         EX();
         MEM();
-
+        if(!ID_EX.bubble){
+            instruction_count += 1;
+        }
         //数据冒险
         //1a 1b
         if(EX_MEM_old.Rd>0 && (EX_MEM_old.Rd == ID_EX_old.Rs || EX_MEM_old.Rd == ID_EX_old.Rt)){
             if_stall = id_stall = ex_bubble = true;
-            instruction_count -= 1;
+            data_hazard += 1;
         }
         //2a 2b
         if(MEM_WB_old.Rd>0 && (MEM_WB_old.Rd == ID_EX_old.Rs || MEM_WB_old.Rd == ID_EX_old.Rt)){
             if_stall = id_stall = ex_bubble = true;
-            instruction_count -= 1;
+            data_hazard += 1;
         }
         //分支预测错误
 
@@ -178,7 +180,7 @@ void simulate()
             if_stall = false;
             id_bubble = true;
             ex_bubble = true;
-            instruction_count -= 2;
+            control_hazard += 1;
         }
         if(if_stall) PC = oldPC;
         if(!id_stall) IF_ID = IF_ID_old;
@@ -193,7 +195,7 @@ void simulate()
         reg[0] = 0;//一直为零
 
 #ifdef DBG
-        disp_reg();
+        //disp_reg();
         //1  2
         //disp_memory(0x11778, 4, 1);
         //disp_memory(0x11760, 4, 1);
@@ -215,17 +217,21 @@ void simulate()
         if(print_fetch || onestep) {
             printf("\n");
         }
-        instruction_count += 1;
-        clock_count += alu_clock_cycles;
+        clock_count += 1;
 
     }
     cout <<"simulate over!"<<endl;
-    cout <<"CPI = "<<(float)clock_count/instruction_count<<endl;
-    while(true){
-        bool cont = parse_dbg_cmd();
-        if(cont)
-            break;
-    }
+    cout<<"Instructions: "<<instruction_count;
+    cout<<", Clock cycles: "<<clock_count;
+    cout <<", CPI = "<<(float)clock_count/instruction_count<<endl;
+    cout<<"Data hazards: "<<data_hazard;
+    cout<<", Control hazards: "<<control_hazard<<endl;
+    if(onestep || print_fetch)
+        while(true){
+            bool cont = parse_dbg_cmd();
+            if(cont)
+                break;
+        }
 }
 
 

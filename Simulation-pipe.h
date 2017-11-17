@@ -112,7 +112,7 @@ unsigned char memory[MAX]={0};
 REG reg[32]={0};
 //PC
 int PC=0;
-int alu_clock_cycles;
+int alu_clock_cycles = 1;
 bool last_inst_div;
 bool this_inst_div;
 bool this_inst_rem;

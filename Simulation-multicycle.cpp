@@ -216,12 +216,14 @@ void simulate()
 
     }
     cout <<"simulate over!"<<endl;
-    cout <<"CPI = "<<(float)clock_count/instruction_count<<endl;
-    while(true){
-        bool cont = parse_dbg_cmd();
-        if(cont)
-            break;
-    }
+    cout<<"Instructions: "<<instruction_count<<endl;
+    cout <<"Clock cycles: "<<clock_count<<", CPI = "<<(float)clock_count/instruction_count<<endl;
+    if(onestep || print_fetch)
+        while(true){
+            bool cont = parse_dbg_cmd();
+            if(cont)
+                break;
+        }
 }
 
 
@@ -233,7 +235,7 @@ void IF()
         printf("Fetching instruction at %x\n", PC);
     }
     IF_ID_old.inst=read_mem_4(PC);
-    IF_ID_old.PC=PC;
+    IF_ID_old.inst_addr=PC;
     PC=PC+4;
 }
 
@@ -756,7 +758,7 @@ inst_type ID()
     else{
         invalid_inst();
     }
-    int temp_PC = IF_ID.PC;
+    int temp_PC = IF_ID.inst_addr;
     int target = 0;
     //compute branch target
     if(newPCSrc==ALUOUT){//JAL/BEQ
@@ -774,7 +776,7 @@ inst_type ID()
     ID_EX_old.Imm=ext_signed(EXTsrc,EXTop,immlen);
     ID_EX_old.Reg_Rs=reg[rs];
     ID_EX_old.Reg_Rt=reg[rt];
-    ID_EX_old.PC=IF_ID.PC;
+    ID_EX_old.inst_addr=IF_ID.inst_addr;
     //...
 
     ID_EX_old.Ctrl_EX_ALUOp=ALUop;
@@ -798,7 +800,7 @@ inst_type ID()
 void EX()
 {
     //read ID_EX
-    int temp_PC=ID_EX.PC;
+    int temp_PC=ID_EX.inst_addr;
     char RegDst=ID_EX.Ctrl_EX_RegDst;
     char ALUOp=ID_EX.Ctrl_EX_ALUOp;
     char ALUSrc_a=ID_EX.Ctrl_EX_ALUSrc_a;
@@ -817,7 +819,7 @@ void EX()
         ALU_a = ID_EX.Reg_Rs;
     }
     else if(ALUSrc_a == PCval){
-        ALU_a = ID_EX.PC;
+        ALU_a = ID_EX.inst_addr;
     }
     else if(ALUSrc_a == ZERO){
         ALU_a = 0;
@@ -883,7 +885,7 @@ void EX()
     //write EX_MEM_old
     EX_MEM_old.ALU_out=ALUout;
     EX_MEM_old.rem=rem;
-    EX_MEM_old.PC=temp_PC;
+    EX_MEM_old.inst_addr=temp_PC;
     EX_MEM_old.Reg_dst=Reg_Dst;
     EX_MEM_old.Zero=Zero;
     EX_MEM_old.Sign=Sign;
@@ -949,7 +951,7 @@ void MEM()
     int Imm = EX_MEM.Imm;
     char MemWrite = EX_MEM.Ctrl_M_MemWrite;
     char MemRead = EX_MEM.Ctrl_M_MemRead;
-    int temp_PC = EX_MEM.PC;
+    int temp_PC = EX_MEM.inst_addr;
     int newPC = 0;
     unsigned long long Mem_read = 0;
     //complete Branch instruction PC change

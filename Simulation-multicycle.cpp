@@ -12,6 +12,8 @@ extern unsigned int madr;
 extern unsigned int endPC;
 extern unsigned int entry;
 extern unsigned long long global_pointer;
+extern unsigned int sdata_offset;
+extern unsigned long long sdata_adr,sdata_size;
 extern FILE *file;
 
 unsigned short read_mem_2(unsigned long long address);
@@ -25,7 +27,7 @@ void disp_memory(int addr, int size, int blocks);
 
 bool print_fetch = false, print_inst = false, print_aluinfo = false, print_pc = false, print_mem = false, print_wb = false;
 bool onestep = false;
-//#define DBG
+#define DBG
 
 //指令运行数
 long long inst_num=0;
@@ -41,6 +43,8 @@ void load_memory()
     fread(&memory[vadr],1,csize,file);
     fseek(file,dadr,SEEK_SET);
     fread(&memory[gp],1,dsize,file);
+    fseek(file,sdata_offset,SEEK_SET);
+    fread(&memory[sdata_adr], 1, sdata_size, file);
 
     //vadr=vadr>>2;
     //csize=csize>>2;
@@ -207,7 +211,23 @@ void simulate()
 
 #ifdef DBG
         disp_reg();
-        disp_memory(0x116b8, 4, 42);
+        //1  2
+        disp_memory(0x11778, 4, 1);
+        disp_memory(0x11760, 4, 1);
+        disp_memory(0x11764, 4, 1);
+        //3  4
+        //disp_memory(0x11010, 4, 5);
+        //disp_memory(0x11788, 4, 1);
+        //5
+        //disp_memory(0x11010, 4, 6);
+        //6
+        //disp_memory(0x11760, 4, 1);//result
+        //disp_memory(0x11778, 4, 1);//temp
+        //7 8
+        //disp_memory(0x11010, 4, 6);
+        //disp_memory(0x11778, 4, 1);
+        //9 10
+        //disp_memory(0x11760, 4, 3);
 #endif
         if(print_fetch || onestep) {
             printf("\n");

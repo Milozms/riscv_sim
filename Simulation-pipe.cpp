@@ -27,7 +27,7 @@ void disp_memory(int addr, int size, int blocks);
 
 bool print_fetch = false, print_inst = false, print_aluinfo = false, print_pc = false, print_mem = false, print_wb = false;
 bool onestep = false;
-//#define DBG
+#define DBG
 
 //指令运行数
 long long inst_num=0;
@@ -197,9 +197,9 @@ void simulate()
 #ifdef DBG
         //disp_reg();
         //1  2
-        //disp_memory(0x11778, 4, 1);
-        //disp_memory(0x11760, 4, 1);
-        //disp_memory(0x11764, 4, 1);
+        disp_memory(0x11778, 4, 1);
+        disp_memory(0x11760, 4, 1);
+        disp_memory(0x11764, 4, 1);
         //3  4
         //disp_memory(0x11010, 4, 5);
         //disp_memory(0x11788, 4, 1);
@@ -212,7 +212,7 @@ void simulate()
         //disp_memory(0x11010, 4, 6);
         //disp_memory(0x11778, 4, 1);
         //9 10
-        disp_memory(0x11760, 4, 3);
+        //disp_memory(0x11760, 4, 3);
 #endif
         if(print_fetch || onestep) {
             printf("\n");
